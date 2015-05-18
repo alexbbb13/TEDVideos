@@ -10,6 +10,7 @@ public class RSSPostData {
     public String postVideoUrl=null;
     public String postTitle=null;
     public String postInfo=null;
+    public boolean isCached=false;
 
 
     public boolean isFilled(){

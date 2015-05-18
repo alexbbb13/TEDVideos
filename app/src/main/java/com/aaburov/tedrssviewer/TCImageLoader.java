@@ -7,6 +7,7 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.util.Log;
 import android.util.LruCache;
 import android.widget.ImageView;
@@ -33,35 +34,22 @@ public class TCImageLoader implements ComponentCallbacks2 {
         if(cache==null) cache = new TCLruCache(limitKb);
     }
 
-    public void display(String url, ImageView imageview, int defaultresource) {
-        imageview.setImageResource(defaultresource);
-        Bitmap image = cache.get(url);
+    public void display(String url, final ImageView imageview, int defaultresource) {
+        imageview.setImageDrawable(null);
+        final Bitmap image = cache.get(url);
         if (image != null) {
-            imageview.setImageBitmap(image);
+                    imageview.setImageBitmap(image);
         }
         else {
-            new SetImageTask(imageview).execute(url);
             imageview.setImageResource(defaultresource);
-        }
-    }
-
-
-    private class TCLruCache extends LruCache<String, Bitmap> {
-
-        public TCLruCache(int maxSize) {
-            super(maxSize);
-        }
-
-        @Override
-        protected int sizeOf(String key, Bitmap value) {
-            int kbOfBitmap = value.getByteCount() / 1024;
-            return kbOfBitmap;
+            new SetImageTask(imageview).execute(url);
         }
     }
 
     private class SetImageTask extends AsyncTask<String, Void, Integer> {
         private ImageView imageview;
         private Bitmap bmp;
+        private String url;
 
         public SetImageTask(ImageView imageview) {
             this.imageview = imageview;
@@ -69,7 +57,7 @@ public class TCImageLoader implements ComponentCallbacks2 {
 
         @Override
         protected Integer doInBackground(String... params) {
-            String url = params[0];
+            url = params[0];
             try {
                 bmp = getBitmapFromURL(url);
                 if (bmp != null) {
@@ -88,7 +76,9 @@ public class TCImageLoader implements ComponentCallbacks2 {
         @Override
         protected void onPostExecute(Integer result) {
             if (result == 1) {
+                //if(cache.get(url)!=null) //if cache is still valid
                 imageview.setImageBitmap(bmp);
+                //else Log.d("onPostExecute","Cache invalidated while loading!");
             }
             super.onPostExecute(result);
         }
@@ -112,10 +102,9 @@ public class TCImageLoader implements ComponentCallbacks2 {
                 return null;
             }
         }
-
-
-
     }
+
+
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
